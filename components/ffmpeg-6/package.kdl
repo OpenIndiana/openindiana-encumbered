@@ -1,13 +1,14 @@
-name "video/ffmpeg"
+name "video/ffmpeg-6"
 project-name "ffmpeg"
 classification "System/Multimedia Libraries"
 summary "A very fast video and audio converter"
 license-file "ffmpeg.license"
 license "LGPLv2.1+, GPLv2, MIT/X11/BSD-style"
-version "7.0.2"
+version "6.1.2"
 project-url "https://www.ffmpeg.org"
 source {
-    archive "https://www.ffmpeg.org/releases/ffmpeg-7.0.2.tar.xz" sha256="8646515b638a3ad303e23af6a3587734447cb8fc0a0c064ecdb8e95c4fd8b389"
+    archive "https://www.ffmpeg.org/releases/ffmpeg-6.1.2.tar.xz" sha256="3b624649725ecdc565c903ca6643d41f33bd49239922e45c9b1442c63dca4e38"
+    patch "01-interop-new-ffmpeg.patch" drop-directories=1
     patch "03-test-awk.patch" drop-directories=1
     file "ffmpeg.license"
 }
@@ -16,9 +17,11 @@ build {
         disable-destdir-configure-option
         enable-large-files
         flag "-I/usr/X11/include" name="CFLAGS"
+        // This flag breaks compilation thus disable it
         //flag "gcc_C99_ENABLE" name="CPPFLAGS"
         option "prefix=/usr"
         option "libdir=/usr/lib/64"
+        // This option is already the default
         //option "mandir=/usr/share/man"
         option "cc=/usr/bin/gcc"
         option "enable-runtime-cpudetect"
@@ -71,6 +74,21 @@ build {
         option "disable-static"
         // these tests cause problems, skip them
         option "ignore-tests=source"
+        // We do not need documentation for old ffmpeg version
+        option "disable-doc"
+        // We do not want the programs for ffmpeg-6
+        // NOTE: once we build test support into the tooling we will need to enable this option for testing only
+        option "disable-programs"
+        // Original code from oi-userland to remove things
+        // COMPONENT_POST_INSTALL_ACTION += $(RM) -r $(PROTOUSRBINDIR) ;
+        // COMPONENT_POST_INSTALL_ACTION += $(RM) -r $(PROTOUSRSHAREDIR)/ffmpeg ;
+        // Adaptions to place files into the correct directories
+        option "incdir=/usr/include/ffmpeg-6"
+        option "pkgconfigdir=usr/lib/64/pkgconfig/ffmpeg-6"
+        // Testing related code from oi-userland
+        // COMPONENT_TEST_ENV += PATH=$(PROTO_DIR)/$(CONFIGURE_BINDIR.$(BITS)):$(PATH)
+        // COMPONENT_TEST_ENV += LD_LIBRARY_PATH=$(PROTO_DIR)/$(CONFIGURE_LIBDIR.$(BITS))
+        // COMPONENT_TEST_TRANSFORMS+= '-n -e "/TEST/p" -e "/^IGNORE/p" '
     }
 }
 dependency "library/security/openssl-31" dev=true kind="require"
